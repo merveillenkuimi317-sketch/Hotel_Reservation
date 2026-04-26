@@ -1,0 +1,33 @@
+{
+  "feature_cols": [
+    "annee",
+    "mois",
+    "jour",
+    "jour_semaine",
+    "trimestre",
+    "mois_sin",
+    "mois_cos",
+    "jour_sem_sin",
+    "jour_sem_cos",
+    "est_weekend",
+    "est_debut_mois",
+    "est_fin_mois",
+    "saison_pluies_longue",
+    "saison_seche",
+    "saison_seche_courte"
+  ],
+  "metriques": {
+    "nb_reservations": {
+      "MAE": 0.846,
+      "R2": 0.273
+    },
+    "nb_last_minute": {
+      "MAE": 0.646,
+      "R2": -0.158
+    },
+    "taux_occupation": {
+      "MAE": 8.411,
+      "R2": 0.283
+    }
+  }
+}

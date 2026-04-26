@@ -1,0 +1,35 @@
+# Dépendances
+node_modules/
+vendor/
+
+# Environnements Python
+ml-service/venv/
+ml-service/__pycache__/
+ml-service/**/__pycache__/
+*.pyc
+*.pyo
+
+# Variables d'environnement
+.env
+.env.*
+!.env.example
+
+# Build frontend
+frontend/dist/
+
+# Logs
+*.log
+storage/logs/*.log
+
+# Cache Laravel
+bootstrap/cache/*.php
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+
+# SQLite dev
+backend/database/database.sqlite
+
+# OS
+.DS_Store
+Thumbs.db

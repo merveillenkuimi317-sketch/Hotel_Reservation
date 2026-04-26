@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+
+  # ── Base de données MySQL ─────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: hotel_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: hotel_reservation
+      MYSQL_USER: hotel_user
+      MYSQL_PASSWORD: hotel_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - hotel_network
+
+  # ── Backend Laravel ───────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hotel_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - APP_KEY=base64:64vQhJDvMQ9IY78PLOTXI8/5Q+oxGdrjuPFGrhhIxeI=
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=hotel_reservation
+      - DB_USERNAME=hotel_user
+      - DB_PASSWORD=hotel_password
+      - SESSION_DRIVER=file
+      - SANCTUM_STATEFUL_DOMAINS=
+      - ML_API_URL=http://flask:5000
+    depends_on:
+      - mysql
+    networks:
+      - hotel_network
+
+  # ── Service ML Flask ──────────────────────────────
+  flask:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: hotel_flask
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./ml-service/model/saved:/app/model/saved
+    networks:
+      - hotel_network
+
+  # ── Frontend React ────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hotel_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - hotel_network
+
+volumes:
+  mysql_data:
+
+networks:
+  hotel_network:
+    driver: bridge
