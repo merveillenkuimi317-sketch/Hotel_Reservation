@@ -66,6 +66,15 @@ def agreger_par_jour(df, total_chambres):
         agg['nb_reservations'] / total_chambres * 100
     ).clip(0, 100).round(2)
 
+    agg = agg.sort_values('date_arrivee').reset_index(drop=True)
+    moyenne = agg['nb_reservations'].mean()
+
+    agg['lag_7']   = agg['nb_reservations'].shift(7).fillna(moyenne)
+    agg['lag_14']  = agg['nb_reservations'].shift(14).fillna(moyenne)
+    agg['lag_28']  = agg['nb_reservations'].shift(28).fillna(moyenne)
+    agg['roll_7']  = agg['nb_reservations'].rolling(7,  min_periods=1).mean().shift(1).fillna(moyenne)
+    agg['roll_30'] = agg['nb_reservations'].rolling(30, min_periods=1).mean().shift(1).fillna(moyenne)
+
     agg = creer_features(agg)
     return agg
 
@@ -77,6 +86,7 @@ def preparer_dataset(df_brut, total_chambres):
         'annee', 'mois', 'jour', 'jour_semaine', 'trimestre',
         'mois_sin', 'mois_cos', 'jour_sem_sin', 'jour_sem_cos',
         'est_weekend', 'est_debut_mois', 'est_fin_mois',
+        'lag_7', 'lag_14', 'lag_28', 'roll_7', 'roll_30',
     ]
     saison_cols  = [c for c in df_agg.columns if c.startswith('saison_')]
     feature_cols += saison_cols

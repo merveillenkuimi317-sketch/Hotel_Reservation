@@ -38,11 +38,6 @@ def features_vers_vecteur(feat):
     js   = feat.get('jour_semaine', 0)
     jour = feat.get('jour', 1)
 
-    try:
-        sem = datetime(feat.get('annee', 2025), mois, jour).isocalendar()[1]
-    except:
-        sem = 1
-
     row = {
         'annee'          : feat.get('annee', datetime.now().year),
         'mois'           : mois,
@@ -59,6 +54,11 @@ def features_vers_vecteur(feat):
         'saison_pluies_courte' : int(mois in [3, 4, 5]),
         'saison_pluies_longue' : int(mois in [6, 7, 8, 9, 10]),
         'saison_seche_courte'  : int(mois in [11, 12]),
+        'lag_7'   : feat.get('lag_7',   metadata.get('moyenne_reservations', 2.0)),
+        'lag_14'  : feat.get('lag_14',  metadata.get('moyenne_reservations', 2.0)),
+        'lag_28'  : feat.get('lag_28',  metadata.get('moyenne_reservations', 2.0)),
+        'roll_7'  : feat.get('roll_7',  metadata.get('moyenne_reservations', 2.0)),
+        'roll_30' : feat.get('roll_30', metadata.get('moyenne_reservations', 2.0)),
     }
 
     feature_cols = metadata.get('feature_cols', list(row.keys()))

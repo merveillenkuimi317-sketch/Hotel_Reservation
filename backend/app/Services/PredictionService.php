@@ -75,9 +75,13 @@ class PredictionService
 
     private function preparerFeaturesEntree(int $jours): array
     {
+        $historique = $this->getHistoriqueDailyCount(35);
+
         $features = [];
         for ($i = 0; $i < $jours; $i++) {
-            $date       = now()->addDays($i);
+            $date    = now()->addDays($i);
+            $dateStr = $date->toDateString();
+
             $features[] = [
                 'annee'        => $date->year,
                 'mois'         => $date->month,
@@ -86,9 +90,40 @@ class PredictionService
                 'est_weekend'  => (int) $date->isWeekend(),
                 'mois_sin'     => round(sin(2 * M_PI * $date->month / 12), 6),
                 'mois_cos'     => round(cos(2 * M_PI * $date->month / 12), 6),
+                'lag_7'        => $historique[$date->copy()->subDays(7)->toDateString()]  ?? null,
+                'lag_14'       => $historique[$date->copy()->subDays(14)->toDateString()] ?? null,
+                'lag_28'       => $historique[$date->copy()->subDays(28)->toDateString()] ?? null,
+                'roll_7'       => $this->rollingMean($historique, $dateStr, 7),
+                'roll_30'      => $this->rollingMean($historique, $dateStr, 30),
             ];
         }
         return $features;
+    }
+
+    private function getHistoriqueDailyCount(int $jours): array
+    {
+        $rows = \App\Models\Reservation::whereNotIn('statut', ['annulee'])
+            ->where('date_arrivee', '>=', now()->subDays($jours + 30)->toDateString())
+            ->where('date_arrivee', '<',  now()->toDateString())
+            ->selectRaw('date_arrivee, COUNT(*) as nb')
+            ->groupBy('date_arrivee')
+            ->pluck('nb', 'date_arrivee')
+            ->toArray();
+        return $rows;
+    }
+
+    private function rollingMean(array $historique, string $date, int $fenetre): float
+    {
+        $total = 0;
+        $count = 0;
+        for ($d = 1; $d <= $fenetre; $d++) {
+            $key = \Carbon\Carbon::parse($date)->subDays($d)->toDateString();
+            if (isset($historique[$key])) {
+                $total += $historique[$key];
+                $count++;
+            }
+        }
+        return $count > 0 ? round($total / $count, 4) : 2.0;
     }
 
     private function sauvegarderPredictions(array $predictions, int $totalChambres): array

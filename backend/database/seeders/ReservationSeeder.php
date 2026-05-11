@@ -20,7 +20,7 @@ class ReservationSeeder extends Seeder
 
         $chambres = DB::table('chambres')->get()->toArray();
         $now      = Carbon::now();
-        $start    = Carbon::create(2025, 7, 1);
+        $start    = Carbon::create(2023, 1, 1);
         $end      = Carbon::create(2026, 6, 30);
 
         $this->command->info('Génération des réservations du ' . $start->format('d/m/Y') . ' au ' . $end->format('d/m/Y') . '...');

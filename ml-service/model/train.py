@@ -66,7 +66,9 @@ def sauvegarder(modeles, feature_cols, metriques):
             pickle.dump(modele, f)
         print(f"  Modèle sauvegardé : {chemin}")
 
-    meta = {'feature_cols': feature_cols, 'metriques': metriques}
+    import numpy as np
+    moyenne = float(np.mean(y_res)) if len(y_res) > 0 else 2.0
+    meta = {'feature_cols': feature_cols, 'metriques': metriques, 'moyenne_reservations': round(moyenne, 4)}
     with open(os.path.join(MODEL_DIR, 'metadata.json'), 'w') as f:
         json.dump(meta, f, indent=2)
     print("  Métadonnées sauvegardées.")
