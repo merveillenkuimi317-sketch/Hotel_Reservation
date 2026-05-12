@@ -33,7 +33,13 @@ class ReservationController extends Controller
             $query->where('is_last_minute', (bool) $request->is_last_minute);
         }
 
-        $reservations = $query->orderBy('created_at', 'desc')
+        $sortField = $request->get('sort', 'date_arrivee');
+        $sortDir   = $request->get('dir', 'asc');
+        $allowedSorts = ['date_arrivee', 'date_reservation', 'created_at', 'prix_total'];
+        if (!in_array($sortField, $allowedSorts)) $sortField = 'date_arrivee';
+        if (!in_array($sortDir, ['asc', 'desc'])) $sortDir = 'asc';
+
+        $reservations = $query->orderBy($sortField, $sortDir)
                               ->paginate($request->get('per_page', 15));
 
         return response()->json($reservations);
@@ -41,13 +47,20 @@ class ReservationController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $user = $request->user();
+
+        $rules = [
             'chambre_id'       => 'required|exists:chambres,id',
             'date_arrivee'     => 'required|date|after_or_equal:today',
             'date_depart'      => 'required|date|after:date_arrivee',
             'nombre_personnes' => 'required|integer|min:1',
             'remarques'        => 'nullable|string',
-        ]);
+        ];
+        if ($user->isGestionnaire()) {
+            $rules['user_id'] = 'nullable|exists:users,id';
+        }
+
+        $validated = $request->validate($rules);
 
         $chambre = Chambre::findOrFail($validated['chambre_id']);
 
@@ -63,10 +76,16 @@ class ReservationController extends Controller
             ], 409);
         }
 
+        $clientId = $user->isGestionnaire() && !empty($validated['user_id'])
+            ? $validated['user_id']
+            : $user->id;
+
         $reservation = Reservation::create([
             ...$validated,
-            'user_id'    => $request->user()->id,
+            'user_id'    => $clientId,
             'chambre_id' => $chambre->id,
+            // Réservation sur place → directement confirmée
+            'statut'     => $user->isGestionnaire() ? 'confirmee' : 'en_attente',
         ]);
 
         if ($reservation->is_last_minute) {
@@ -110,10 +129,10 @@ class ReservationController extends Controller
             'statut'           => 'sometimes|in:confirmee,annulee',
         ]);
 
-        if ($user->isClient()) {
+        // Seul le gestionnaire peut changer le statut
+        if (!$user->isGestionnaire()) {
             unset($validated['statut']);
-            // Si le client modifie une réservation déjà confirmée, elle repasse en attente
-            if ($reservation->statut === 'confirmee') {
+            if ($user->isClient() && $reservation->statut === 'confirmee') {
                 $validated['statut'] = 'en_attente';
             }
         }

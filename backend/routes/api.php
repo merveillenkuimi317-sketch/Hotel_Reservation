@@ -30,24 +30,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/reservations/{reservation}',           [ReservationController::class, 'update']);
     Route::patch('/reservations/{reservation}/annuler', [ReservationController::class, 'annuler']);
 
-    // ── Admin + Gestionnaire ──────────────────────────────────────────────
-    Route::middleware('role:admin,gestionnaire')->group(function () {
-
-        // Chambres
+    // ── Admin uniquement — gestion des chambres ──────────────────────────
+    Route::middleware('role:admin')->group(function () {
         Route::post('/chambres',             [ChambreController::class, 'store']);
         Route::put('/chambres/{chambre}',    [ChambreController::class, 'update']);
         Route::delete('/chambres/{chambre}', [ChambreController::class, 'destroy']);
         Route::get('/chambres-stats',        [ChambreController::class, 'statistiques']);
+    });
 
-        // Dashboard
-        Route::get('/dashboard',          [DashboardController::class, 'index']);
-        Route::get('/reservations-stats', [ReservationController::class, 'statistiques']);
-
-        // Prédictions
+    // ── Gestionnaire uniquement — réservations & prédictions ─────────────
+    Route::middleware('role:gestionnaire')->group(function () {
+        Route::get('/clients',                  [AuthController::class, 'listerClients']);
+        Route::get('/reservations-stats',       [ReservationController::class, 'statistiques']);
         Route::get('/predictions',              [PredictionController::class, 'index']);
         Route::post('/predictions/lancer',      [PredictionController::class, 'lancer']);
         Route::get('/predictions/alertes',      [PredictionController::class, 'alertes']);
         Route::patch('/alertes/{alerte}/lue',   [PredictionController::class, 'marquerAlerteLue']);
         Route::get('/predictions/prix',         [PredictionController::class, 'recommandationPrix']);
+    });
+
+    // ── Admin + Gestionnaire — dashboard & alertes (lecture) ─────────────
+    Route::middleware('role:admin,gestionnaire')->group(function () {
+        Route::get('/dashboard',           [DashboardController::class, 'index']);
+        Route::get('/predictions/alertes', [PredictionController::class, 'alertes']);
     });
 });

@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 
 export default function Dashboard() {
-  const { user, canManage } = useAuth();
+  const { user, isGestionnaire } = useAuth();
   const [data, setData]         = useState(null);
   const [alertes, setAlertes]   = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -20,16 +20,18 @@ export default function Dashboard() {
   const chargerDonnees = async () => {
     setLoading(true);
     try {
-      const [dashData, alertesData] = await Promise.all([
-        dashboardAPI.stats(),
-        predictionsAPI.alertes(),
-      ]);
+      const dashData = await dashboardAPI.stats();
       setData(dashData);
-      setAlertes(alertesData);
     } catch (err) {
-      console.error(err);
+      console.error('Dashboard stats error:', err);
     } finally {
       setLoading(false);
+    }
+    try {
+      const alertesData = await predictionsAPI.alertes();
+      setAlertes(alertesData);
+    } catch {
+      // alertes non disponibles pour ce rôle
     }
   };
 
@@ -74,7 +76,7 @@ export default function Dashboard() {
             })}
           </p>
         </div>
-        {canManage() && (
+        {isGestionnaire() && (
           <button style={styles.btnIA} onClick={lancerPrediction}>
              Actualiser prédictions
           </button>

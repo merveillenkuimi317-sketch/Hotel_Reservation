@@ -85,3 +85,7 @@ export const predictionsAPI = {
 export const dashboardAPI = {
   stats: () => apiFetch('/dashboard'),
 };
+
+export const clientsAPI = {
+  lister: () => apiFetch('/clients'),
+};

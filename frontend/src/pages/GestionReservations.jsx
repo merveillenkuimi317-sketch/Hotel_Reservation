@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { reservationsAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const STATUTS = [
   { key: '',           label: 'Toutes'      },
@@ -17,29 +18,44 @@ const STATUT_STYLE = {
 };
 
 export default function GestionReservations() {
+  const { isGestionnaire } = useAuth();
   const [reservations, setReservations] = useState([]);
   const [meta, setMeta]                 = useState(null);
-  const [filtreStatut, setFiltreStatut] = useState('en_attente');
+  const [filtreStatut, setFiltreStatut] = useState('');
   const [recherche, setRecherche]       = useState('');
   const [page, setPage]                 = useState(1);
   const [loading, setLoading]           = useState(true);
   const [actionId, setActionId]         = useState(null);
   const [msg, setMsg]                   = useState(null);
+  const [sort, setSort]                 = useState({ field: 'date_arrivee', dir: 'asc' });
+
+  const toggleSort = (field) => {
+    setSort(prev => ({
+      field,
+      dir: prev.field === field && prev.dir === 'asc' ? 'desc' : 'asc',
+    }));
+    setPage(1);
+  };
 
   const charger = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, per_page: 12 };
+      const params = { page, per_page: 12, sort: sort.field, dir: sort.dir };
       if (filtreStatut) params.statut = filtreStatut;
       const data = await reservationsAPI.lister(params);
       setReservations(data.data ?? []);
-      setMeta(data.meta ?? null);
+      setMeta({
+        total:        data.total        ?? 0,
+        last_page:    data.last_page    ?? 1,
+        current_page: data.current_page ?? 1,
+        per_page:     data.per_page     ?? 12,
+      });
     } catch (e) {
       afficherMsg('Erreur lors du chargement', 'erreur');
     } finally {
       setLoading(false);
     }
-  }, [filtreStatut, page]);
+  }, [filtreStatut, page, sort]);
 
   useEffect(() => { charger(); }, [charger]);
   useEffect(() => { setPage(1); }, [filtreStatut]);
@@ -149,9 +165,23 @@ export default function GestionReservations() {
           <table style={styles.table}>
             <thead>
               <tr>
-                {['Référence', 'Client', 'Chambre', 'Arrivée', 'Départ', 'Réservé le', 'Total', 'Statut', 'Actions'].map(h => (
-                  <th key={h} style={styles.th}>{h}</th>
+                <th style={styles.th}>Référence</th>
+                <th style={styles.th}>Client</th>
+                <th style={styles.th}>Chambre</th>
+                {[
+                  { label: 'Arrivée',     field: 'date_arrivee' },
+                  { label: 'Départ',      field: 'date_arrivee' },
+                  { label: 'Réservé le',  field: 'date_reservation' },
+                  { label: 'Total',       field: 'prix_total' },
+                ].map(({ label, field }) => (
+                  <th key={label} style={{ ...styles.th, cursor: 'pointer', userSelect: 'none' }}
+                      onClick={() => toggleSort(field)}>
+                    {label}{' '}
+                    {sort.field === field ? (sort.dir === 'asc' ? '↑' : '↓') : '↕'}
+                  </th>
                 ))}
+                <th style={styles.th}>Statut</th>
+                <th style={styles.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -188,7 +218,7 @@ export default function GestionReservations() {
                   </td>
                   <td style={styles.td}>
                     <div style={styles.actions}>
-                      {r.statut === 'en_attente' && (
+                      {isGestionnaire() && r.statut === 'en_attente' && (
                         <button
                           style={styles.btnConfirmer}
                           onClick={() => confirmer(r.id)}
@@ -197,7 +227,7 @@ export default function GestionReservations() {
                           {actionId === r.id ? '...' : 'Confirmer'}
                         </button>
                       )}
-                      {!['annulee', 'terminee'].includes(r.statut) && (
+                      {isGestionnaire() && !['annulee', 'terminee'].includes(r.statut) && (
                         <button
                           style={styles.btnAnnuler}
                           onClick={() => annuler(r.id)}
@@ -206,6 +236,7 @@ export default function GestionReservations() {
                           Annuler
                         </button>
                       )}
+                      {!isGestionnaire() && <span style={{ color: '#90A4AE', fontSize: '0.8rem' }}>—</span>}
                     </div>
                   </td>
                 </tr>

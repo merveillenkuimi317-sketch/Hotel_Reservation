@@ -33,21 +33,21 @@ function PrivateRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />;
 }
 
-// ── Garde de route : admin ou gestionnaire requis ─────────────────────────
+// ── Garde : admin ou gestionnaire ────────────────────────────────────────
 function ManagerRoute({ children }) {
   const { user, loading, canManage } = useAuth();
-
-  if (loading) {
-    return (
-      <div style={styles.loading}>
-        <div style={styles.spinner} />
-      </div>
-    );
-  }
-
+  if (loading) return <div style={styles.loading}><div style={styles.spinner} /></div>;
   if (!user) return <Navigate to="/login" replace />;
   if (!canManage()) return <Navigate to="/chambres" replace />;
+  return children;
+}
 
+// ── Garde : gestionnaire uniquement ──────────────────────────────────────
+function GestionnaireRoute({ children }) {
+  const { user, loading, isGestionnaire } = useAuth();
+  if (loading) return <div style={styles.loading}><div style={styles.spinner} /></div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isGestionnaire()) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -111,9 +111,9 @@ function AppRoutes() {
       } />
 
       <Route path="/gestion-reservations" element={
-        <ManagerRoute>
+        <GestionnaireRoute>
           <Layout><GestionReservations /></Layout>
-        </ManagerRoute>
+        </GestionnaireRoute>
       } />
 
       {/* Redirection par défaut */}

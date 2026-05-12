@@ -78,6 +78,17 @@ class AuthController extends Controller
         return response()->json($request->user()->load('reservations.chambre'));
     }
 
+    public function listerClients(Request $request): JsonResponse
+    {
+        $clients = User::where('role', 'client')
+            ->select('id', 'nom', 'prenom', 'email', 'telephone')
+            ->orderBy('nom')
+            ->get()
+            ->map(fn($u) => [...$u->toArray(), 'nom_complet' => "{$u->prenom} {$u->nom}"]);
+
+        return response()->json($clients);
+    }
+
     public function changePassword(Request $request): JsonResponse
     {
         $request->validate([

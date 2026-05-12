@@ -17,9 +17,10 @@ class DashboardController extends Controller
 
         $totalChambres = Chambre::count();
 
-        // Réservations du mois
+        // Réservations du mois (hors annulées)
         $reservationsMois = Reservation::whereMonth('date_arrivee', $mois)
             ->whereYear('date_arrivee', $annee)
+            ->where('statut', '!=', 'annulee')
             ->get();
 
         // Taux d'occupation

@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar() {
-  const { user, logout, canManage } = useAuth();
+  const { user, logout, canManage, isAdmin, isGestionnaire } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
   const [menu, setMenu] = useState(false);
@@ -41,10 +41,10 @@ export default function Navbar() {
           )}
 
           {canManage && canManage() && (
-            <>
-              <Link to="/dashboard"             style={linkStyle('/dashboard')}>Dashboard</Link>
-              <Link to="/gestion-reservations"  style={linkStyle('/gestion-reservations')}>Réservations</Link>
-            </>
+            <Link to="/dashboard" style={linkStyle('/dashboard')}>Dashboard</Link>
+          )}
+          {isGestionnaire && isGestionnaire() && (
+            <Link to="/gestion-reservations" style={linkStyle('/gestion-reservations')}>Réservations</Link>
           )}
         </div>
 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { chambresAPI, reservationsAPI } from '../services/api';
+import { chambresAPI, reservationsAPI, clientsAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Reservation() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { isGestionnaire } = useAuth();
 
   const [form, setForm] = useState({
     chambre_id       : searchParams.get('chambre_id') || '',
@@ -12,15 +14,21 @@ export default function Reservation() {
     date_depart      : searchParams.get('depart') || '',
     nombre_personnes : 1,
     remarques        : '',
+    user_id          : '',
   });
 
   const [chambres, setChambres]               = useState([]);
+  const [clients, setClients]                 = useState([]);
   const [chambreSelectionnee, setChambre]     = useState(null);
   const [prixTotal, setPrixTotal]             = useState(0);
   const [isLastMinute, setIsLastMinute]       = useState(false);
   const [erreur, setErreur]                   = useState('');
   const [succes, setSucces]                   = useState('');
   const [loading, setLoading]                 = useState(false);
+
+  useEffect(() => {
+    if (isGestionnaire()) clientsAPI.lister().then(setClients).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (form.date_arrivee && form.date_depart) {
@@ -74,9 +82,11 @@ export default function Reservation() {
     setLoading(true);
 
     try {
-      const data = await reservationsAPI.creer(form);
-      setSucces(` Réservation ${data.reservation.reference} confirmée !`);
-      setTimeout(() => navigate('/mes-reservations'), 2000);
+      const payload = { ...form };
+      if (!isGestionnaire() || !payload.user_id) delete payload.user_id;
+      const data = await reservationsAPI.creer(payload);
+      setSucces(` Réservation ${data.reservation.reference} créée !`);
+      setTimeout(() => navigate(isGestionnaire() ? '/gestion-reservations' : '/mes-reservations'), 2000);
     } catch (err) {
       setErreur(err.message);
     } finally {
@@ -127,6 +137,29 @@ export default function Reservation() {
               />
             </div>
           </div>
+
+          {/* Sélecteur client — gestionnaire uniquement */}
+          {isGestionnaire() && (
+            <div style={styles.group}>
+              <label style={styles.label}>Client (optionnel)</label>
+              <select
+                name="user_id"
+                value={form.user_id}
+                onChange={handleChange}
+                style={styles.input}
+              >
+                <option value="">— Sélectionner un client existant —</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.nom_complet} — {c.email}
+                  </option>
+                ))}
+              </select>
+              <span style={{ fontSize: '0.78rem', color: '#90A4AE' }}>
+                Laisser vide si le client n'est pas encore enregistré
+              </span>
+            </div>
+          )}
 
           {/* Personnes */}
           <div style={styles.group}>
