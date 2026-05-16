@@ -16,21 +16,23 @@ import Dashboard from './pages/Dashboard';
 import Navbar from './components/layout/Navbar';
 import ModifierReservation from './pages/ModifierReservation';
 import GestionReservations from './pages/GestionReservations';
+import GestionChambres from './pages/GestionChambres';
+import GestionUtilisateurs from './pages/GestionUtilisateurs';
 
 // ── Garde de route : utilisateur connecté requis ──────────────────────────
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div style={styles.loading}>
-        <div style={styles.spinner} />
-        <p>Chargement...</p>
-      </div>
-    );
-  }
-
+  if (loading) return <div style={styles.loading}><div style={styles.spinner} /></div>;
   return user ? children : <Navigate to="/login" replace />;
+}
+
+// ── Garde : clients et gestionnaires uniquement (pas admin) ───────────────
+function NonAdminRoute({ children }) {
+  const { user, loading, isAdmin } = useAuth();
+  if (loading) return <div style={styles.loading}><div style={styles.spinner} /></div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (isAdmin()) return <Navigate to="/dashboard" replace />;
+  return children;
 }
 
 // ── Garde : admin ou gestionnaire ────────────────────────────────────────
@@ -39,6 +41,15 @@ function ManagerRoute({ children }) {
   if (loading) return <div style={styles.loading}><div style={styles.spinner} /></div>;
   if (!user) return <Navigate to="/login" replace />;
   if (!canManage()) return <Navigate to="/chambres" replace />;
+  return children;
+}
+
+// ── Garde : admin uniquement ─────────────────────────────────────────────
+function AdminRoute({ children }) {
+  const { user, loading, isAdmin } = useAuth();
+  if (loading) return <div style={styles.loading}><div style={styles.spinner} /></div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isAdmin()) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -84,23 +95,23 @@ function AppRoutes() {
         <Layout><Chambres /></Layout>
       } />
 
-      {/* Routes privées */}
+      {/* Routes privées — non accessibles à l'admin */}
       <Route path="/reserver" element={
-        <PrivateRoute>
+        <NonAdminRoute>
           <Layout><Reservation /></Layout>
-        </PrivateRoute>
+        </NonAdminRoute>
       } />
 
       <Route path="/mes-reservations" element={
-        <PrivateRoute>
+        <NonAdminRoute>
           <Layout><MesReservations /></Layout>
-        </PrivateRoute>
+        </NonAdminRoute>
       } />
 
       <Route path="/modifier-reservation/:id" element={
-        <PrivateRoute>
+        <NonAdminRoute>
           <Layout><ModifierReservation /></Layout>
-        </PrivateRoute>
+        </NonAdminRoute>
       } />
 
       {/* Routes gestionnaire/admin */}
@@ -114,6 +125,18 @@ function AppRoutes() {
         <GestionnaireRoute>
           <Layout><GestionReservations /></Layout>
         </GestionnaireRoute>
+      } />
+
+      <Route path="/gestion-chambres" element={
+        <AdminRoute>
+          <Layout><GestionChambres /></Layout>
+        </AdminRoute>
+      } />
+
+      <Route path="/gestion-utilisateurs" element={
+        <AdminRoute>
+          <Layout><GestionUtilisateurs /></Layout>
+        </AdminRoute>
       } />
 
       {/* Redirection par défaut */}

@@ -89,6 +89,53 @@ class AuthController extends Controller
         return response()->json($clients);
     }
 
+    public function listerUtilisateurs(Request $request): JsonResponse
+    {
+        $users = User::select('id', 'nom', 'prenom', 'email', 'role', 'telephone', 'created_at')
+            ->orderBy('role')
+            ->orderBy('nom')
+            ->get()
+            ->map(fn($u) => [...$u->toArray(), 'nom_complet' => "{$u->prenom} {$u->nom}"]);
+
+        return response()->json($users);
+    }
+
+    public function changerRole(Request $request, User $user): JsonResponse
+    {
+        $validated = $request->validate([
+            'role' => 'required|in:client,gestionnaire,admin',
+        ]);
+
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'Vous ne pouvez pas modifier votre propre rôle.'], 403);
+        }
+
+        $user->update(['role' => $validated['role']]);
+
+        return response()->json(['message' => 'Rôle mis à jour.', 'user' => $user]);
+    }
+
+    public function supprimerUtilisateur(Request $request, User $user): JsonResponse
+    {
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'Vous ne pouvez pas vous supprimer vous-même.'], 403);
+        }
+
+        $reservationsActives = $user->reservations()
+            ->whereIn('statut', ['en_attente', 'confirmee'])
+            ->where('date_depart', '>=', now())
+            ->count();
+
+        if ($reservationsActives > 0) {
+            return response()->json(['message' => 'Impossible : cet utilisateur a des réservations actives.'], 409);
+        }
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json(['message' => 'Utilisateur supprimé.']);
+    }
+
     public function changePassword(Request $request): JsonResponse
     {
         $request->validate([

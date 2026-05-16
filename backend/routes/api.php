@@ -30,12 +30,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/reservations/{reservation}',           [ReservationController::class, 'update']);
     Route::patch('/reservations/{reservation}/annuler', [ReservationController::class, 'annuler']);
 
-    // ── Admin uniquement — gestion des chambres ──────────────────────────
+    // ── Admin uniquement — gestion des chambres & utilisateurs ───────────
     Route::middleware('role:admin')->group(function () {
         Route::post('/chambres',             [ChambreController::class, 'store']);
         Route::put('/chambres/{chambre}',    [ChambreController::class, 'update']);
         Route::delete('/chambres/{chambre}', [ChambreController::class, 'destroy']);
         Route::get('/chambres-stats',        [ChambreController::class, 'statistiques']);
+
+        Route::get('/users',                  [AuthController::class, 'listerUtilisateurs']);
+        Route::patch('/users/{user}/role',    [AuthController::class, 'changerRole']);
+        Route::delete('/users/{user}',        [AuthController::class, 'supprimerUtilisateur']);
     });
 
     // ── Gestionnaire uniquement — réservations & prédictions ─────────────

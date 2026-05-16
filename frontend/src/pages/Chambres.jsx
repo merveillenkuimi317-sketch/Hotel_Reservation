@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { chambresAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Chambres() {
   const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
 
   const [chambres, setChambres]   = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -46,11 +48,7 @@ export default function Chambres() {
   };
 
   const reserver = (chambre) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
+    if (!user) { navigate('/login'); return; }
     navigate(`/reserver?chambre_id=${chambre.id}&arrivee=${filtres.date_arrivee}&depart=${filtres.date_depart}`);
   };
 
@@ -188,13 +186,15 @@ export default function Chambres() {
                       </span>
                       <span style={styles.prixSous}>/nuit</span>
                     </div>
-                    <button
-                      style={chambre.statut === 'disponible' ? styles.btnReserver : styles.btnIndispo}
-                      onClick={() => chambre.statut === 'disponible' && reserver(chambre)}
-                      disabled={chambre.statut !== 'disponible'}
-                    >
-                      {chambre.statut === 'disponible' ? 'Réserver' : 'Indisponible'}
-                    </button>
+                    {!isAdmin() && (
+                      <button
+                        style={chambre.statut === 'disponible' ? styles.btnReserver : styles.btnIndispo}
+                        onClick={() => chambre.statut === 'disponible' && reserver(chambre)}
+                        disabled={chambre.statut !== 'disponible'}
+                      >
+                        {chambre.statut === 'disponible' ? 'Réserver' : 'Indisponible'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

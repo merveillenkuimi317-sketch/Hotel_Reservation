@@ -89,3 +89,9 @@ export const dashboardAPI = {
 export const clientsAPI = {
   lister: () => apiFetch('/clients'),
 };
+
+export const usersAPI = {
+  lister:         ()          => apiFetch('/users'),
+  changerRole:    (id, role)  => apiFetch(`/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+  supprimer:      (id)        => apiFetch(`/users/${id}`, { method: 'DELETE' }),
+};
