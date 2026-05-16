@@ -9,6 +9,10 @@ ml-service/**/__pycache__/
 *.pyc
 *.pyo
 
+# Modèles ML entraînés (binaires, chaque machine entraîne les siens)
+ml-service/model/saved/*.pkl
+ml-service/model/saved/metadata.json
+
 # Variables d'environnement
 .env
 .env.*
