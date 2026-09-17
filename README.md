@@ -34,26 +34,7 @@ Le point central du projet est le **module de prédiction par intelligence artif
 
 Le projet est entièrement **conteneurisé avec Docker**. Il est composé de **4 services** qui communiquent entre eux :
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Docker Compose                        │
-│                                                         │
-│  ┌──────────────┐    ┌──────────────┐                  │
-│  │   React      │───▶│   Laravel    │                  │
-│  │  (Frontend)  │    │  (Backend)   │                  │
-│  │  Port 3000   │    │  Port 8000   │                  │
-│  └──────────────┘    └──────┬───────┘                  │
-│                             │                           │
-│                    ┌────────┴────────┐                  │
-│                    │                 │                   │
-│             ┌──────▼──────┐  ┌──────▼──────┐           │
-│             │    MySQL    │  │    Flask    │           │
-│             │  (Base de   │  │  (Service   │           │
-│             │  données)   │  │    ML/IA)   │           │
-│             │  Port 3307  │  │  Port 5000  │           │
-│             └─────────────┘  └─────────────┘           │
-└─────────────────────────────────────────────────────────┘
-```
+
 
 ### Rôle de chaque service
 
